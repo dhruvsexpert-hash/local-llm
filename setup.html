@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Local LLM — Model Setup Wizard</title>
+    <meta name="description"
+        content="Set up your local AI models. Choose from General and Coder models to run on your machine." />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a2e;
+            --bg-card-hover: #22223a;
+            --bg-card-selected: #1e2a4a;
+            --border-default: #2a2a3e;
+            --border-selected: #4f8aff;
+            --border-hover: #3a3a55;
+            --text-primary: #e8e8f0;
+            --text-secondary: #9090a8;
+            --text-dim: #606078;
+            --accent-blue: #4f8aff;
+            --accent-blue-glow: rgba(79, 138, 255, 0.15);
+            --accent-green: #34d399;
+            --accent-green-glow: rgba(52, 211, 153, 0.15);
+            --accent-yellow: #fbbf24;
+            --accent-red: #f87171;
+            --accent-purple: #a78bfa;
+            --radius: 12px;
+            --radius-lg: 16px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse 600px 400px at 20% 20%, rgba(79, 138, 255, 0.06), transparent),
+                radial-gradient(ellipse 500px 300px at 80% 80%, rgba(167, 139, 250, 0.05), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .header .logo {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--accent-blue);
+            margin-bottom: 16px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #e8e8f0 0%, #a78bfa 50%, #4f8aff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 16px;
+            line-height: 1.6;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* Steps indicator */
+        .steps {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 40px;
+        }
+
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--border-default);
+            transition: all 0.3s ease;
+        }
+
+        .step-dot.active {
+            background: var(--accent-blue);
+            box-shadow: 0 0 12px var(--accent-blue-glow);
+            transform: scale(1.2);
+        }
+
+        .step-dot.done {
+            background: var(--accent-green);
+        }
+
+        /* Section */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .section-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .section-subtitle span {
+            color: var(--text-dim);
+        }
+
+        /* Model cards */
+        .model-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .model-card {
+            background: var(--bg-card);
+            border: 1.5px solid var(--border-default);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .model-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+            transform: translateY(-1px);
+        }
+
+        .model-card.selected {
+            background: var(--bg-card-selected);
+            border-color: var(--border-selected);
+            box-shadow: 0 0 20px var(--accent-blue-glow);
+        }
+
+        .model-card.selected::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+        }
+
+        .card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .card-top-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card-checkbox {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            border: 2px solid var(--border-default);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .model-card.selected .card-checkbox {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+
+        .card-checkbox svg {
+            width: 12px;
+            height: 12px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .model-card.selected .card-checkbox svg {
+            opacity: 1;
+        }
+
+        .card-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .card-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: var(--accent-green-glow);
+            color: var(--accent-green);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+        }
+
+        .card-desc {
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.5;
+            margin-left: 32px;
+        }
+
+        /* Variant picker (shown when card is selected and has multiple variants) */
+        .variant-picker {
+            display: none;
+            margin-top: 14px;
+            margin-left: 32px;
+            gap: 10px;
+        }
+
+        .model-card.selected .variant-picker {
+            display: flex;
+            flex-wrap: wrap;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .variant-btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border-default);
+            background: var(--bg-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .variant-btn:hover {
+            border-color: var(--border-hover);
+            background: var(--bg-card);
+        }
+
+        .variant-btn.active {
+            border-color: var(--accent-blue);
+            background: rgba(79, 138, 255, 0.08);
+        }
+
+        .variant-emoji {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
+        .variant-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: block;
+        }
+
+        .variant-meta {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 2px;
+            display: block;
+        }
+
+        /* Buttons */
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.25s ease;
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-default);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4f8aff, #6366f1);
+            color: white;
+            box-shadow: 0 4px 16px rgba(79, 138, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(79, 138, 255, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .skip-link {
+            color: var(--text-dim);
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            background: none;
+            border: none;
+            font-family: inherit;
+        }
+
+        .skip-link:hover {
+            color: var(--text-secondary);
+        }
+
+        .selection-count {
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .selection-count strong {
+            color: var(--accent-blue);
+        }
+
+        /* Progress / Installing section */
+        #section-install {
+            text-align: center;
+        }
+
+        .install-status {
+            margin-top: 32px;
+        }
+
+        .install-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            margin-bottom: 10px;
+            border: 1px solid var(--border-default);
+        }
+
+        .install-item .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2.5px solid var(--border-default);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .install-item.done .spinner {
+            display: none;
+        }
+
+        .install-item .check {
+            display: none;
+            color: var(--accent-green);
+            font-size: 18px;
+        }
+
+        .install-item.done .check {
+            display: block;
+        }
+
+        .install-item .error-icon {
+            display: none;
+            color: var(--accent-red);
+            font-size: 18px;
+        }
+
+        .install-item.error .spinner {
+            display: none;
+        }
+
+        .install-item.error .error-icon {
+            display: block;
+        }
+
+        .install-item .model-tag {
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .install-item .install-label {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-left: auto;
+        }
+
+        .install-item.pending {
+            opacity: 0.5;
+        }
+
+        .install-item.pending .spinner {
+            animation: none;
+            border-top-color: var(--border-default);
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 4px;
+            background: var(--border-default);
+            border-radius: 2px;
+            margin: 24px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 2px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .container {
+                padding: 24px 16px 60px;
+            }
+
+            .header h1 {
+                font-size: 28px;
+            }
+
+            .variant-btn {
+                min-width: 120px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">⚡ Local LLM</div>
+            <h1>Model Setup Wizard</h1>
+            <p>Choose the AI models you want to run locally. You can select multiple models from each category.</p>
+        </div>
+
+        <!-- Steps -->
+        <div class="steps">
+            <div class="step-dot active" id="dot-0"></div>
+            <div class="step-dot" id="dot-1"></div>
+            <div class="step-dot" id="dot-2"></div>
+        </div>
+
+        <!-- ═══════ STEP 1: General Models ═══════ -->
+        <div class="section active" id="section-general">
+            <div class="section-title">🤖 General Models</div>
+            <div class="section-subtitle">Chat, reasoning, vision & specialized models <span>• Select any you'd like to
+                    install</span></div>
+            <div class="model-grid" id="general-grid"></div>
+            <div class="actions">
+                <div class="selection-count" id="general-count">No models selected</div>
+                <div style="display:flex;gap:10px;align-items:center">
+                    <button class="skip-link" onclick="goToStep(1)">Skip →</button>
+                    <button class="btn btn-primary" onclick="goToStep(1)">Next: Coder Models →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ STEP 2: Coder Models ═══════ -->
+        <div class="section" id="section-code">
+            <div class="section-title">💻 Coder Models</div>
+            <div class="section-subtitle">Models fine-tuned for programming, debugging & code generation <span>• Select
+                    any you'd like</span></div>
+            <div class="model-grid" id="code-grid"></div>
+            <div class="actions">
+                <div class="selection-count" id="code-count">No models selected</div>
+                <div style="display:flex;gap:10px;align-items:center">
+                    <button class="btn btn-secondary" onclick="goToStep(0)">← Back</button>
+                    <button class="btn btn-primary" id="install-btn" onclick="startInstall()">Install Selected
+                        Models</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ STEP 3: Installing ═══════ -->
+        <div class="section" id="section-install">
+            <div class="section-title">⬇️ Installing Models</div>
+            <div class="section-subtitle" id="install-subtitle">Pulling models from Ollama registry...</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <div class="install-status" id="install-list"></div>
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        // MODEL CATALOG (mirrors setup_models.py)
+        // ═══════════════════════════════════════════════════════════════
+
+        const GENERAL_MODELS = [
+            {
+                name: "Qwen 3", recommended: true,
+                description: "Next-Gen General model (2025/26). Significant reasoning boost over v2.5. Rivals 7B models in logic.",
+                variants: [
+                    { tag: "qwen3:0.6b", ram: "~600 MB", label: "Low" },
+                    { tag: "qwen3:1.7b", ram: "~1.7 GB", label: "High" },
+                ]
+            },
+            {
+                name: "Granite 4", recommended: false,
+                description: "Enterprise 'Micro' dense model. Hybrid Mamba/Transformer architecture makes it extremely fast.",
+                variants: [
+                    { tag: "granite4-tiny:1b", ram: "~1 GB", label: "Low" },
+                    { tag: "granite4:3b", ram: "~3 GB", label: "High" },
+                ]
+            },
+            {
+                name: "Gemma 3", recommended: false,
+                description: "Multimodal. Native Image + Text understanding. 32k context window.",
+                variants: [
+                    { tag: "gemma3:1b", ram: "~1 GB", label: "Low" },
+                    { tag: "gemma3:4b", ram: "~4 GB", label: "High" },
+                ]
+            },
+            {
+                name: "Gemma 3n", recommended: false,
+                description: "Mobile Optimized. Uses 'selective parameter activation' to run 4B smarts on 2B RAM.",
+                variants: [
+                    { tag: "gemma3n:e2b", ram: "~2 GB", label: "Low" },
+                    { tag: "gemma3n:e4b", ram: "~4 GB", label: "High" },
+                ]
+            },
+            {
+                name: "Ministral 3", recommended: false,
+                description: "Edge Agent. Designed for function calling and agentic workflows. 128k context.",
+                variants: [{ tag: "ministral:3b", ram: "~3 GB", label: "Single" }]
+            },
+            {
+                name: "Llama 3.2", recommended: false,
+                description: "The robust standard for edge AI. 128k context, solid tool use.",
+                variants: [
+                    { tag: "llama3.2:1b", ram: "~1 GB", label: "Low" },
+                    { tag: "llama3.2:3b", ram: "~3 GB", label: "High" },
+                ]
+            },
+            {
+                name: "Granite 3.2 Vision", recommended: false,
+                description: "Best for Docs. Specifically trained to read charts, tables, and invoices.",
+                variants: [{ tag: "granite3.2-vision:2b", ram: "~2 GB", label: "Single" }]
+            },
+            {
+                name: "DeepSeek R1", recommended: false,
+                description: "'Thinking' Model. Uses Chain-of-Thought (CoT) to solve logic/math puzzles.",
+                variants: [{ tag: "deepseek-r1:1.5b", ram: "~1.5 GB", label: "Single" }]
+            },
+            {
+                name: "DeepSeek OCR", recommended: false,
+                description: "Specialized. Converts images of text (PDFs, handwriting) into perfect Markdown.",
+                variants: [{ tag: "deepseek-ocr:3b", ram: "~3 GB", label: "Single" }]
+            },
+            {
+                name: "Granite 3.1 MoE", recommended: false,
+                description: "Mixture of Experts. Very low latency (activates fewer params per token).",
+                variants: [
+                    { tag: "granite3.1-moe:1b", ram: "~1 GB", label: "Low" },
+                    { tag: "granite3.1-moe:3b", ram: "~3 GB", label: "High" },
+                ]
+            },
+            {
+                name: "Granite 3.1 Dense", recommended: false,
+                description: "Highly optimized for enterprise tasks and RAG (Retrieval Augmented Generation).",
+                variants: [{ tag: "granite3-dense:2b", ram: "~2 GB", label: "Single" }]
+            },
+            {
+                name: "Phi-2", recommended: false,
+                description: "Microsoft's previous flagship small model. Good logic, but 4k context limit.",
+                variants: [{ tag: "phi:2.7b", ram: "~2.7 GB", label: "Single" }]
+            },
+            {
+                name: "Moondream 2", recommended: false,
+                description: "Very fast image description model. Runs on Raspberry Pi.",
+                variants: [{ tag: "moondream:1.4b", ram: "~1.4 GB", label: "Single" }]
+            },
+            {
+                name: "SmolLM", recommended: false,
+                description: "Trained on high-quality synthetic data. Good for creative writing.",
+                variants: [
+                    { tag: "smollm:360m", ram: "~360 MB", label: "Low" },
+                    { tag: "smollm:1.7b", ram: "~1.7 GB", label: "High" },
+                ]
+            },
+            {
+                name: "TinyLlama", recommended: false,
+                description: "The 'hello world' of LLMs. Runs on almost any hardware.",
+                variants: [{ tag: "tinyllama:1.1b", ram: "~1.1 GB", label: "Single" }]
+            },
+        ];
+
+        const CODER_MODELS = [
+            {
+                name: "Qwen 2.5 Coder", recommended: true,
+                description: "The 'King' of Small Coders. Matches GPT-4 performance in many coding benchmarks. Supports 90+ languages.",
+                variants: [
+                    { tag: "qwen2.5-coder:0.5b", ram: "~500 MB", label: "Low" },
+                    { tag: "qwen2.5-coder:1.5b", ram: "~1.5 GB", label: "Mid" },
+                    { tag: "qwen2.5-coder:3b", ram: "~3 GB", label: "High" },
+                ]
+            },
+            {
+                name: "Stable Code", recommended: false,
+                description: "Autocomplete Specialist. Excellent at 'Fill-In-The-Middle' (FIM) for IDE integration. Very fast.",
+                variants: [{ tag: "stable-code:3b", ram: "~3 GB", label: "Single" }]
+            },
+            {
+                name: "DeepSeek Coder", recommended: false,
+                description: "Lightweight Classic. Pre-R1 model. Very efficient for quick script generation on older hardware.",
+                variants: [{ tag: "deepseek-coder:1.3b", ram: "~1.3 GB", label: "Single" }]
+            },
+            {
+                name: "CodeGemma", recommended: false,
+                description: "Google's Code Specialist. Optimized for code completion and generation, utilizing Gemma 1 architecture.",
+                variants: [{ tag: "codegemma:2b", ram: "~2 GB", label: "Single" }]
+            },
+            {
+                name: "Yi Coder", recommended: false,
+                description: "Long Context Coder. Supports massive context windows (up to 32k) for analyzing whole files.",
+                variants: [{ tag: "yi-coder:1.5b", ram: "~1.5 GB", label: "Single" }]
+            },
+        ];
+
+        // ═══════════════════════════════════════════════════════════════
+        // STATE
+        // ═══════════════════════════════════════════════════════════════
+
+        // { modelIndex: { selected: bool, variantIndex: number } }
+        const generalState = {};
+        const codeState = {};
+        let currentStep = 0;
+
+        // ═══════════════════════════════════════════════════════════════
+        // RENDERING
+        // ═══════════════════════════════════════════════════════════════
+
+        function getVariantInfo(v) {
+            if (v.label === "Low") return { emoji: "🟢", perf: "Lower performance", usage: "Low system usage" };
+            if (v.label === "Mid") return { emoji: "🟡", perf: "Balanced performance", usage: "Medium system usage" };
+            if (v.label === "High") return { emoji: "🔴", perf: "Better accuracy", usage: "High system usage" };
+            return { emoji: "🔵", perf: "Standard", usage: "Standard usage" };
+        }
+
+        function renderModelGrid(models, state, containerId) {
+            const grid = document.getElementById(containerId);
+            grid.innerHTML = "";
+
+            models.forEach((model, idx) => {
+                if (!state[idx]) state[idx] = { selected: false, variantIndex: 0 };
+
+                const card = document.createElement("div");
+                card.className = "model-card" + (state[idx].selected ? " selected" : "");
+                card.id = `${containerId}-card-${idx}`;
+
+                // Badge
+                const badge = model.recommended ? `<span class="card-badge">Recommended</span>` : "";
+
+                // Variants
+                let variantHTML = "";
+                if (model.variants.length > 1) {
+                    const btns = model.variants.map((v, vi) => {
+                        const info = getVariantInfo(v);
+                        const active = state[idx].variantIndex === vi ? "active" : "";
+                        return `<div class="variant-btn ${active}" data-model="${idx}" data-variant="${vi}" onclick="selectVariant('${containerId}', ${idx}, ${vi}, event)">
+          <div class="variant-emoji">${info.emoji}</div>
+          <span class="variant-label">${info.perf}</span>
+          <span class="variant-meta">${info.usage} • RAM: ${v.ram}</span>
+        </div>`;
+                    }).join("");
+                    variantHTML = `<div class="variant-picker">${btns}</div>`;
+                } else {
+                    const v = model.variants[0];
+                    variantHTML = `<div class="variant-picker" style="display:none"><span style="color:var(--text-dim);font-size:13px;">RAM: ${v.ram}</span></div>`;
+                }
+
+                card.innerHTML = `
+      <div class="card-top">
+        <div class="card-top-left">
+          <div class="card-checkbox">
+            <svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="card-name">${model.name}</span>
+        </div>
+        ${badge}
+      </div>
+      <div class="card-desc">${model.description}</div>
+      ${variantHTML}
+    `;
+
+                card.addEventListener("click", (e) => {
+                    if (e.target.closest(".variant-btn")) return;
+                    toggleModel(containerId, idx, models, state);
+                });
+
+                grid.appendChild(card);
+            });
+
+            updateCount(containerId, models, state);
+        }
+
+        function toggleModel(containerId, idx, models, state) {
+            state[idx].selected = !state[idx].selected;
+            renderModelGrid(models, state, containerId);
+        }
+
+        function selectVariant(containerId, modelIdx, variantIdx, event) {
+            event.stopPropagation();
+            const state = containerId === "general-grid" ? generalState : codeState;
+            const models = containerId === "general-grid" ? GENERAL_MODELS : CODER_MODELS;
+            state[modelIdx].variantIndex = variantIdx;
+            renderModelGrid(models, state, containerId);
+        }
+
+        function updateCount(containerId, models, state) {
+            const countEl = document.getElementById(containerId === "general-grid" ? "general-count" : "code-count");
+            const count = Object.values(state).filter(s => s.selected).length;
+            if (count === 0) {
+                countEl.innerHTML = "No models selected";
+            } else {
+                countEl.innerHTML = `<strong>${count}</strong> model${count > 1 ? "s" : ""} selected`;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // STEP NAVIGATION
+        // ═══════════════════════════════════════════════════════════════
+
+        function goToStep(step) {
+            currentStep = step;
+
+            document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+            const sections = ["section-general", "section-code", "section-install"];
+            document.getElementById(sections[step]).classList.add("active");
+
+            document.querySelectorAll(".step-dot").forEach((d, i) => {
+                d.classList.remove("active", "done");
+                if (i < step) d.classList.add("done");
+                if (i === step) d.classList.add("active");
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // INSTALL
+        // ═══════════════════════════════════════════════════════════════
+
+        function getSelectedModels() {
+            const general = [];
+            const code = [];
+
+            GENERAL_MODELS.forEach((m, i) => {
+                if (generalState[i] && generalState[i].selected) {
+                    const vi = generalState[i].variantIndex;
+                    const v = m.variants[vi];
+                    general.push({ name: m.name, tag: v.tag, ram: v.ram, category: "general" });
+                }
+            });
+
+            CODER_MODELS.forEach((m, i) => {
+                if (codeState[i] && codeState[i].selected) {
+                    const vi = codeState[i].variantIndex;
+                    const v = m.variants[vi];
+                    code.push({ name: m.name, tag: v.tag, ram: v.ram, category: "code" });
+                }
+            });
+
+            return { general, code };
+        }
+
+        async function startInstall() {
+            let { general, code } = getSelectedModels();
+
+            // Default if nothing selected
+            if (general.length === 0 && code.length === 0) {
+                general = [{ name: "Qwen 3", tag: "qwen3:1.7b", ram: "~1.7 GB", category: "general" }];
+                code = [{ name: "Qwen 2.5 Coder", tag: "qwen2.5-coder:3b", ram: "~3 GB", category: "code" }];
+            }
+
+            goToStep(2);
+
+            const allModels = [...general, ...code];
+            const listEl = document.getElementById("install-list");
+            const progressBar = document.getElementById("progress-bar");
+            const subtitle = document.getElementById("install-subtitle");
+
+            // Render install list
+            listEl.innerHTML = allModels.map((m, i) => `
+    <div class="install-item pending" id="install-${i}">
+      <div class="spinner"></div>
+      <span class="check">✓</span>
+      <span class="error-icon">✗</span>
+      <span class="model-tag">${m.name}</span>
+      <span class="install-label">${m.tag} • ${m.ram}</span>
+    </div>
+  `).join("");
+
+            // Send selection to backend
+            try {
+                const res = await fetch("/api/setup/select", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ general, code })
+                });
+
+                if (!res.ok) throw new Error("Failed to save config");
+
+                // Pull models one by one
+                for (let i = 0; i < allModels.length; i++) {
+                    const item = document.getElementById(`install-${i}`);
+                    item.classList.remove("pending");
+
+                    subtitle.textContent = `Pulling ${allModels[i].name} (${i + 1}/${allModels.length})...`;
+
+                    try {
+                        const pullRes = await fetch("/api/setup/pull", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ tag: allModels[i].tag })
+                        });
+
+                        if (pullRes.ok) {
+                            item.classList.add("done");
+                        } else {
+                            item.classList.add("error");
+                        }
+                    } catch {
+                        item.classList.add("error");
+                    }
+
+                    progressBar.style.width = `${((i + 1) / allModels.length) * 100}%`;
+                }
+
+                subtitle.textContent = "All models installed! Redirecting to chat...";
+                progressBar.style.width = "100%";
+
+                // Reload models in the app
+                await fetch("/api/models/reload", { method: "POST" });
+
+                setTimeout(() => {
+                    window.location.href = "/";
+                }, 1500);
+
+            } catch (err) {
+                subtitle.textContent = `Error: ${err.message}. Please restart the container.`;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // INIT
+        // ═══════════════════════════════════════════════════════════════
+
+        renderModelGrid(GENERAL_MODELS, generalState, "general-grid");
+        renderModelGrid(CODER_MODELS, codeState, "code-grid");
+    </script>
+</body>
+
+</html>

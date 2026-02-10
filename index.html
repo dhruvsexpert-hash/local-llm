@@ -310,10 +310,11 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 14px;
             padding: 8px 12px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             margin-right: 12px;
             outline: none;
             cursor: pointer;
+            max-width: 220px;
         }
 
         textarea {
@@ -391,6 +392,397 @@
                 transform: scale(1);
             }
         }
+
+        /* Settings Button */
+        #settings-btn {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 2001;
+            background: rgba(30, 30, 34, 0.8);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            width: 44px;
+            height: 44px;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+
+        #settings-btn:hover {
+            color: white;
+            background: rgba(40, 40, 45, 1);
+            transform: rotate(30deg);
+        }
+
+        /* Settings Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            background: #16161e;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 620px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+            animation: modalIn 0.25s ease;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px 0;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #fff;
+        }
+
+        .modal-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .storage-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: rgba(99, 102, 241, 0.12);
+            color: #818cf8;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+
+        .model-disk-size {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 8px;
+            background: rgba(99, 102, 241, 0.08);
+            color: #818cf8;
+            white-space: nowrap;
+            margin-left: 4px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.4rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        /* Tabs */
+        .modal-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 16px 24px 0;
+        }
+
+        .modal-tab {
+            padding: 8px 18px;
+            border-radius: 8px;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .modal-tab:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .modal-tab.active {
+            background: rgba(79, 138, 255, 0.1);
+            color: #4f8aff;
+            border-color: rgba(79, 138, 255, 0.25);
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 24px 24px;
+        }
+
+        /* Installed model row */
+        .installed-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .installed-item:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .installed-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .installed-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #e8e8f0;
+        }
+
+        .installed-tag {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .installed-category {
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .cat-general {
+            background: rgba(79, 138, 255, 0.12);
+            color: #4f8aff;
+        }
+
+        .cat-code {
+            background: rgba(167, 139, 250, 0.12);
+            color: #a78bfa;
+        }
+
+        .del-model-btn {
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid rgba(248, 113, 113, 0.2);
+            color: #f87171;
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            font-family: inherit;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .del-model-btn:hover {
+            background: rgba(248, 113, 113, 0.2);
+            border-color: #f87171;
+        }
+
+        .del-model-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Add model catalog */
+        .catalog-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .catalog-item:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .catalog-info {
+            flex: 1;
+            margin-right: 12px;
+        }
+
+        .catalog-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #e8e8f0;
+        }
+
+        .catalog-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            line-height: 1.4;
+        }
+
+        .catalog-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            min-width: 120px;
+        }
+
+        .catalog-variant-select {
+            background: #2a2a35;
+            color: #e8e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            font-family: inherit;
+            cursor: pointer;
+            outline: none;
+            width: 100%;
+        }
+
+        .add-model-btn {
+            background: rgba(52, 211, 153, 0.1);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+            color: #34d399;
+            padding: 5px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.78rem;
+            font-weight: 500;
+            font-family: inherit;
+            transition: all 0.2s;
+            width: 100%;
+            text-align: center;
+        }
+
+        .add-model-btn:hover {
+            background: rgba(52, 211, 153, 0.2);
+            border-color: #34d399;
+        }
+
+        .add-model-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .add-model-btn.installing {
+            background: rgba(79, 138, 255, 0.1);
+            border-color: rgba(79, 138, 255, 0.3);
+            color: #4f8aff;
+        }
+
+        .add-model-btn.done {
+            background: rgba(52, 211, 153, 0.15);
+            border-color: rgba(52, 211, 153, 0.3);
+            color: #34d399;
+        }
+
+        .catalog-installed-badge {
+            font-size: 0.7rem;
+            color: #34d399;
+            font-weight: 600;
+            padding: 4px 10px;
+            background: rgba(52, 211, 153, 0.08);
+            border-radius: 6px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .cancel-model-btn {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.25);
+            color: #fbbf24;
+            padding: 5px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.78rem;
+            font-weight: 500;
+            font-family: inherit;
+            transition: all 0.2s;
+            width: 100%;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        .cancel-model-btn:hover {
+            background: rgba(251, 191, 36, 0.2);
+            border-color: #fbbf24;
+        }
+
+        .modal-empty {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+        }
+
+        .modal-empty .icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .section-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin: 16px 0 8px;
+            font-weight: 600;
+        }
+
+        .section-label:first-child {
+            margin-top: 0;
+        }
     </style>
 </head>
 
@@ -410,10 +802,30 @@
     </div>
 
     <!-- Main App -->
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <h2>⚙️ Model Settings</h2>
+                    <span class="storage-badge" id="total-storage"></span>
+                </div>
+                <button class="modal-close" onclick="closeSettings()">✕</button>
+            </div>
+            <div class="modal-tabs">
+                <button class="modal-tab active" id="tab-installed" onclick="switchTab('installed')">Installed</button>
+                <button class="modal-tab" id="tab-add" onclick="switchTab('add')">Add Models</button>
+            </div>
+            <div class="modal-body">
+                <div id="panel-installed"></div>
+                <div id="panel-add" style="display:none"></div>
+            </div>
+        </div>
+    </div>
+
     <div id="main">
         <button id="toggle-btn" onclick="toggleSidebar()">☰</button>
-
-        <!-- Header Removed -->
+        <button id="settings-btn" onclick="openSettings()">⚙</button>
 
         <div id="chat-container">
             <!-- Messages will be injected here -->
@@ -428,8 +840,7 @@
         <div id="input-area">
             <div class="input-wrapper">
                 <select class="model-select" id="model-select">
-                    <option value="general">Gen</option>
-                    <option value="code">Code</option>
+                    <!-- Populated dynamically from /api/models -->
                 </select>
                 <textarea id="user-input" placeholder="Message Ollama..." rows="1" oninput="autoResize(this)"
                     onkeydown="handleEnter(event)"></textarea>
@@ -459,8 +870,32 @@
             langPrefix: 'hljs language-'
         });
 
+        // Load available models into the dropdown
+        async function loadModels() {
+            try {
+                const res = await fetch('/api/models');
+                const data = await res.json();
+                const select = document.getElementById('model-select');
+                select.innerHTML = '';
+                data.models.forEach((m, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = m.key;
+                    // Show model name with category in brackets
+                    const category = m.key.startsWith('code') ? 'Coder' : 'General';
+                    opt.textContent = `${m.label.replace(/^[^\w]+/, '')} (${category})`;
+                    select.appendChild(opt);
+                });
+            } catch (err) {
+                console.error('Failed to load models:', err);
+                // Fallback
+                const select = document.getElementById('model-select');
+                select.innerHTML = '<option value="general">Qwen 3 (General)</option><option value="code">Qwen 2.5 Coder (Coder)</option>';
+            }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            loadModels();
             loadChats();
             startNewChat();
 
@@ -729,6 +1164,338 @@
         function scrollToBottom() {
             const container = document.getElementById('chat-container');
             container.scrollTop = container.scrollHeight;
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // SETTINGS MODAL
+        // ═══════════════════════════════════════════════════════
+
+        const MODEL_CATALOG = {
+            general: [
+                { name: "Qwen 3", desc: "Next-Gen General. Rivals 7B models in logic.", variants: [{ tag: "qwen3:0.6b", ram: "~600MB", label: "Low usage" }, { tag: "qwen3:1.7b", ram: "~1.7GB", label: "High usage" }] },
+                { name: "Granite 4", desc: "Hybrid Mamba/Transformer. Extremely fast.", variants: [{ tag: "granite4-tiny:1b", ram: "~1GB", label: "Low usage" }, { tag: "granite4:3b", ram: "~3GB", label: "High usage" }] },
+                { name: "Gemma 3", desc: "Multimodal. Image + Text understanding. 32k context.", variants: [{ tag: "gemma3:1b", ram: "~1GB", label: "Low usage" }, { tag: "gemma3:4b", ram: "~4GB", label: "High usage" }] },
+                { name: "Gemma 3n", desc: "Mobile Optimized. Selective parameter activation.", variants: [{ tag: "gemma3n:e2b", ram: "~2GB", label: "Low usage" }, { tag: "gemma3n:e4b", ram: "~4GB", label: "High usage" }] },
+                { name: "Ministral 3", desc: "Edge Agent. Function calling. 128k context.", variants: [{ tag: "ministral:3b", ram: "~3GB", label: "Standard" }] },
+                { name: "Llama 3.2", desc: "Robust edge AI standard. 128k context, tool use.", variants: [{ tag: "llama3.2:1b", ram: "~1GB", label: "Low usage" }, { tag: "llama3.2:3b", ram: "~3GB", label: "High usage" }] },
+                { name: "Granite 3.2 Vision", desc: "Best for docs, charts, tables, invoices.", variants: [{ tag: "granite3.2-vision:2b", ram: "~2GB", label: "Standard" }] },
+                { name: "DeepSeek R1", desc: "Chain-of-Thought reasoning for logic/math.", variants: [{ tag: "deepseek-r1:1.5b", ram: "~1.5GB", label: "Standard" }] },
+                { name: "DeepSeek OCR", desc: "Converts images of text/PDFs into Markdown.", variants: [{ tag: "deepseek-ocr:3b", ram: "~3GB", label: "Standard" }] },
+                { name: "Granite 3.1 MoE", desc: "Mixture of Experts. Very low latency.", variants: [{ tag: "granite3.1-moe:1b", ram: "~1GB", label: "Low usage" }, { tag: "granite3.1-moe:3b", ram: "~3GB", label: "High usage" }] },
+                { name: "Granite 3.1 Dense", desc: "Optimized for enterprise tasks and RAG.", variants: [{ tag: "granite3-dense:2b", ram: "~2GB", label: "Standard" }] },
+                { name: "Phi-2", desc: "Microsoft's small model. Good logic, 4k context.", variants: [{ tag: "phi:2.7b", ram: "~2.7GB", label: "Standard" }] },
+                { name: "Moondream 2", desc: "Very fast image description. Runs on Pi.", variants: [{ tag: "moondream:1.4b", ram: "~1.4GB", label: "Standard" }] },
+                { name: "SmolLM", desc: "High-quality synthetic data. Creative writing.", variants: [{ tag: "smollm:360m", ram: "~360MB", label: "Low usage" }, { tag: "smollm:1.7b", ram: "~1.7GB", label: "High usage" }] },
+                { name: "TinyLlama", desc: "The hello world of LLMs. Any hardware.", variants: [{ tag: "tinyllama:1.1b", ram: "~1.1GB", label: "Standard" }] },
+            ],
+            code: [
+                { name: "Qwen 2.5 Coder", desc: "King of Small Coders. GPT-4 level. 90+ languages.", variants: [{ tag: "qwen2.5-coder:0.5b", ram: "~500MB", label: "Low usage" }, { tag: "qwen2.5-coder:1.5b", ram: "~1.5GB", label: "Mid usage" }, { tag: "qwen2.5-coder:3b", ram: "~3GB", label: "High usage" }] },
+                { name: "Stable Code", desc: "Autocomplete specialist. Fill-In-The-Middle.", variants: [{ tag: "stable-code:3b", ram: "~3GB", label: "Standard" }] },
+                { name: "DeepSeek Coder", desc: "Lightweight classic. Quick script generation.", variants: [{ tag: "deepseek-coder:1.3b", ram: "~1.3GB", label: "Standard" }] },
+                { name: "CodeGemma", desc: "Google's code specialist. Gemma 1 architecture.", variants: [{ tag: "codegemma:2b", ram: "~2GB", label: "Standard" }] },
+                { name: "Yi Coder", desc: "Long context coder. 32k window for whole files.", variants: [{ tag: "yi-coder:1.5b", ram: "~1.5GB", label: "Standard" }] },
+            ]
+        };
+
+        let installedModels = { general: [], code: [] };
+
+        function openSettings() {
+            document.getElementById('settings-modal').classList.add('open');
+            switchTab('installed');
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').classList.remove('open');
+            // Refresh the model dropdown in case models changed
+            loadModels();
+        }
+
+        // Close modal on overlay click
+        document.getElementById('settings-modal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) closeSettings();
+        });
+
+        function switchTab(tab) {
+            document.getElementById('tab-installed').classList.toggle('active', tab === 'installed');
+            document.getElementById('tab-add').classList.toggle('active', tab === 'add');
+            document.getElementById('panel-installed').style.display = tab === 'installed' ? 'block' : 'none';
+            document.getElementById('panel-add').style.display = tab === 'add' ? 'block' : 'none';
+
+            if (tab === 'installed') loadInstalledModels();
+            if (tab === 'add') renderCatalog();
+        }
+
+        async function loadInstalledModels() {
+            const panel = document.getElementById('panel-installed');
+            panel.innerHTML = '<div class="modal-empty"><div class="spinner-small"></div>Loading...</div>';
+
+            try {
+                // Fetch installed models and storage info in parallel
+                const [instRes, storageRes] = await Promise.all([
+                    fetch('/api/setup/installed'),
+                    fetch('/api/setup/storage')
+                ]);
+                installedModels = await instRes.json();
+                const storageInfo = await storageRes.json();
+
+                // Update total storage badge
+                const badge = document.getElementById('total-storage');
+                if (badge) {
+                    badge.textContent = storageInfo.total_display ? `💾 ${storageInfo.total_display}` : '';
+                }
+
+                const all = [
+                    ...(installedModels.general || []).map(m => ({ ...m, category: 'general' })),
+                    ...(installedModels.code || []).map(m => ({ ...m, category: 'code' }))
+                ];
+
+                if (all.length === 0) {
+                    panel.innerHTML = '<div class="modal-empty"><div class="icon">📭</div>No models installed yet.<br>Go to the <b>Add Models</b> tab to get started.</div>';
+                    return;
+                }
+
+                const generalModels = all.filter(m => m.category === 'general');
+                const codeModels = all.filter(m => m.category === 'code');
+                let html = '';
+
+                if (generalModels.length > 0) {
+                    html += '<div class="section-label">General Models</div>';
+                    generalModels.forEach(m => {
+                        html += renderInstalledItem(m, storageInfo.models);
+                    });
+                }
+                if (codeModels.length > 0) {
+                    html += '<div class="section-label">Coder Models</div>';
+                    codeModels.forEach(m => {
+                        html += renderInstalledItem(m, storageInfo.models);
+                    });
+                }
+
+                panel.innerHTML = html;
+            } catch (err) {
+                panel.innerHTML = '<div class="modal-empty">Failed to load models.</div>';
+            }
+        }
+
+        function renderInstalledItem(m, storageModels) {
+            const catClass = m.category === 'code' ? 'cat-code' : 'cat-general';
+            const catLabel = m.category === 'code' ? 'Coder' : 'General';
+            const diskInfo = storageModels && storageModels[m.tag];
+            const diskSize = diskInfo ? diskInfo.size : '';
+            return `
+                <div class="installed-item" id="inst-${CSS.escape(m.tag)}">
+                    <div class="installed-info">
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <span class="installed-name">${m.name || m.tag}</span>
+                            <span class="installed-category ${catClass}">${catLabel}</span>
+                            ${diskSize ? `<span class="model-disk-size">${diskSize}</span>` : ''}
+                        </div>
+                        <span class="installed-tag">${m.tag}${m.ram ? ' • RAM: ' + m.ram : ''}</span>
+                    </div>
+                    <button class="del-model-btn" id="del-${CSS.escape(m.tag)}" onclick="deleteModel('${m.tag}', '${m.category}')">
+                        🗑 Remove
+                    </button>
+                </div>`;
+        }
+
+        async function deleteModel(tag, category) {
+            if (!confirm(`Remove ${tag}?\nThis will delete the model from your system.`)) return;
+
+            const btn = document.getElementById(`del-${CSS.escape(tag)}`);
+            if (btn) { btn.disabled = true; btn.textContent = 'Removing...'; }
+
+            try {
+                await fetch('/api/setup/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tag, category })
+                });
+
+                const item = document.getElementById(`inst-${CSS.escape(tag)}`);
+                if (item) {
+                    item.style.opacity = '0';
+                    item.style.transform = 'translateX(20px)';
+                    item.style.transition = 'all 0.3s';
+                    setTimeout(() => {
+                        item.remove();
+                        loadInstalledModels();
+                    }, 300);
+                }
+            } catch (err) {
+                alert('Failed to delete model: ' + err.message);
+                if (btn) { btn.disabled = false; btn.textContent = '🗑 Remove'; }
+            }
+        }
+
+        function getInstalledTags() {
+            const tags = new Set();
+            (installedModels.general || []).forEach(m => tags.add(m.tag));
+            (installedModels.code || []).forEach(m => tags.add(m.tag));
+            return tags;
+        }
+
+        async function renderCatalog() {
+            // First refresh installed list
+            try {
+                const res = await fetch('/api/setup/installed');
+                installedModels = await res.json();
+            } catch (e) { }
+
+            const panel = document.getElementById('panel-add');
+            const tags = getInstalledTags();
+            let html = '';
+
+            html += '<div class="section-label">🤖 General Models</div>';
+            MODEL_CATALOG.general.forEach((model, mi) => {
+                html += renderCatalogItem(model, 'general', mi, tags);
+            });
+
+            html += '<div class="section-label" style="margin-top:20px">💻 Coder Models</div>';
+            MODEL_CATALOG.code.forEach((model, mi) => {
+                html += renderCatalogItem(model, 'code', mi, tags);
+            });
+
+            panel.innerHTML = html;
+        }
+
+        function renderCatalogItem(model, category, idx, installedTags) {
+            const id = `cat-${category}-${idx}`;
+            // Check if ANY variant is already installed
+            const installedVariants = model.variants.filter(v => installedTags.has(v.tag));
+            const allInstalled = installedVariants.length > 0;
+
+            let rightHTML = '';
+            if (allInstalled) {
+                rightHTML = `<div class="catalog-installed-badge">✓ Installed</div>`;
+            } else {
+                let variantSelect = '';
+                if (model.variants.length > 1) {
+                    const opts = model.variants.map((v, vi) =>
+                        `<option value="${vi}">${v.label} (${v.ram})</option>`
+                    ).join('');
+                    variantSelect = `<select class="catalog-variant-select" id="${id}-variant">${opts}</select>`;
+                } else {
+                    variantSelect = `<select class="catalog-variant-select" id="${id}-variant" style="display:none"><option value="0">${model.variants[0].label}</option></select>
+                    <span style="font-size:0.72rem;color:var(--text-muted);text-align:center">${model.variants[0].ram}</span>`;
+                }
+                rightHTML = `
+                    ${variantSelect}
+                    <button class="add-model-btn" id="${id}-btn" onclick="installModel('${category}', ${idx}, '${id}')">+ Install</button>
+                    <button class="cancel-model-btn" id="${id}-cancel" style="display:none" onclick="cancelInstall('${id}')">✕ Cancel</button>`;
+            }
+
+            return `
+                <div class="catalog-item" id="${id}">
+                    <div class="catalog-info">
+                        <div class="catalog-name">${model.name}</div>
+                        <div class="catalog-desc">${model.desc}</div>
+                    </div>
+                    <div class="catalog-right">
+                        ${rightHTML}
+                    </div>
+                </div>`;
+        }
+
+        // Track active installs for cancellation
+        const activeInstalls = {};
+
+        async function installModel(category, idx, elId) {
+            const model = MODEL_CATALOG[category][idx];
+            const variantSelect = document.getElementById(`${elId}-variant`);
+            const vi = variantSelect ? parseInt(variantSelect.value) : 0;
+            const variant = model.variants[vi];
+            const btn = document.getElementById(`${elId}-btn`);
+            const cancelBtn = document.getElementById(`${elId}-cancel`);
+
+            // Create AbortController for this install
+            const controller = new AbortController();
+            activeInstalls[elId] = { controller, tag: variant.tag, category: category };
+
+            btn.disabled = true;
+            btn.className = 'add-model-btn installing';
+            btn.textContent = '⏳ Downloading...';
+            if (cancelBtn) cancelBtn.style.display = 'block';
+
+            try {
+                // Add to config first
+                await fetch('/api/setup/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: model.name,
+                        tag: variant.tag,
+                        ram: variant.ram,
+                        category: category
+                    }),
+                    signal: controller.signal
+                });
+
+                // Pull the model
+                const pullRes = await fetch('/api/setup/pull', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tag: variant.tag }),
+                    signal: controller.signal
+                });
+
+                if (pullRes.ok) {
+                    btn.className = 'add-model-btn done';
+                    btn.textContent = '✓ Installed';
+                    if (cancelBtn) cancelBtn.style.display = 'none';
+                    // Reload models endpoint
+                    await fetch('/api/models/reload', { method: 'POST' });
+                    loadModels();
+                } else {
+                    const err = await pullRes.json();
+                    throw new Error(err.detail || 'Pull failed');
+                }
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    btn.className = 'add-model-btn';
+                    btn.disabled = false;
+                    btn.textContent = '+ Install';
+                } else {
+                    btn.className = 'add-model-btn';
+                    btn.disabled = false;
+                    btn.textContent = '✗ Retry';
+                    alert('Failed to install: ' + err.message);
+                }
+                if (cancelBtn) cancelBtn.style.display = 'none';
+            } finally {
+                delete activeInstalls[elId];
+            }
+        }
+
+        async function cancelInstall(elId) {
+            const install = activeInstalls[elId];
+            if (!install) return;
+
+            const cancelBtn = document.getElementById(`${elId}-cancel`);
+            if (cancelBtn) { cancelBtn.textContent = 'Cancelling...'; cancelBtn.disabled = true; }
+
+            // Abort the fetch
+            install.controller.abort();
+
+            // Tell the server to kill the process
+            try {
+                await fetch('/api/setup/cancel-pull', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tag: install.tag })
+                });
+                // Also remove from config since it wasn't fully installed
+                await fetch('/api/setup/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tag: install.tag, category: install.category })
+                });
+            } catch (e) { }
+
+            if (cancelBtn) {
+                cancelBtn.textContent = '✕ Cancel';
+                cancelBtn.disabled = false;
+                cancelBtn.style.display = 'none';
+            }
         }
 
     </script>

@@ -2,6 +2,7 @@ import json
 import uuid
 import os
 import calendar
+import subprocess
 from pathlib import Path
 from datetime import datetime
 from typing import List, Optional, Generator, Any, Dict
@@ -9,7 +10,7 @@ from typing import List, Optional, Generator, Any, Dict
 import requests
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import StreamingResponse, FileResponse, HTMLResponse
+from fastapi.responses import StreamingResponse, FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -34,10 +35,38 @@ app.add_middleware(
 SAVED_CHATS_DIR = Path("./saved_chats")
 SAVED_CHATS_DIR.mkdir(parents=True, exist_ok=True)
 
-MODELS = {
-    "general": "qwen3:1.7b",
-    "code": "qwen2.5-coder:3b"
-}
+CONFIG_DIR = Path("./config")
+CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+CONFIG_FILE = CONFIG_DIR / "selected_models.json"
+
+def load_models_config():
+    """Load selected models from the setup wizard config file."""
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE, "r") as f:
+                config = json.load(f)
+            models = {}
+            # General models: use first as default "general" key, rest as named keys
+            general = config.get("general", [])
+            for i, m in enumerate(general):
+                key = "general" if i == 0 else f"general_{i}"
+                models[key] = {"tag": m["tag"], "name": m["name"], "category": "general"}
+            # Code models
+            code = config.get("code", [])
+            for i, m in enumerate(code):
+                key = "code" if i == 0 else f"code_{i}"
+                models[key] = {"tag": m["tag"], "name": m["name"], "category": "code"}
+            if models:
+                return models
+        except (json.JSONDecodeError, KeyError, TypeError):
+            pass
+    # Fallback defaults
+    return {
+        "general": {"tag": "qwen3:1.7b", "name": "Qwen 3", "category": "general"},
+        "code": {"tag": "qwen2.5-coder:3b", "name": "Qwen 2.5 Coder", "category": "code"},
+    }
+
+MODELS = load_models_config()
 
 # ============================================================================
 # TOOLS DEFINITION
@@ -300,19 +329,33 @@ class SaveChatRequest(BaseModel):
 
 # Utilities
 def get_model_name(key: str) -> str:
-    return MODELS.get(key, MODELS["general"])
+    model_entry = MODELS.get(key, MODELS.get("general", next(iter(MODELS.values()))))
+    if isinstance(model_entry, dict):
+        return model_entry["tag"]
+    return model_entry
 
 # Endpoints
 
 @app.get("/api/models")
 async def list_models():
     """Return available models configuration."""
-    return {
-        "models": [
-            {"key": "general", "name": MODELS["general"], "label": "💬 General"},
-            {"key": "code", "name": MODELS["code"], "label": "💻 Code"}
-        ]
-    }
+    model_list = []
+    for key, entry in MODELS.items():
+        if isinstance(entry, dict):
+            category = entry.get("category", "general")
+            emoji = "💻" if category == "code" else "💬"
+            label = f"{emoji} {entry['name']}"
+            model_list.append({"key": key, "name": entry["tag"], "label": label})
+        else:
+            model_list.append({"key": key, "name": entry, "label": key.title()})
+    return {"models": model_list}
+
+@app.post("/api/models/reload")
+async def reload_models():
+    """Reload models config from disk (after re-running setup)."""
+    global MODELS
+    MODELS = load_models_config()
+    return {"status": "ok", "models": list(MODELS.keys())}
 
 @app.post("/api/chat")
 async def chat_stream(request: ChatRequest):
@@ -458,9 +501,240 @@ async def delete_chat(chat_id: str):
         return {"status": "success"}
     raise HTTPException(status_code=404, detail="Chat not found")
 
-# Serve Frontend - index.html
+# ============================================================================
+# SETUP WIZARD ENDPOINTS
+# ============================================================================
+
+class SetupSelectRequest(BaseModel):
+    general: List[Dict[str, str]]
+    code: List[Dict[str, str]]
+
+class SetupPullRequest(BaseModel):
+    tag: str
+
+@app.get("/setup")
+async def serve_setup():
+    """Serve the model setup wizard page."""
+    return FileResponse("setup.html")
+
+@app.post("/api/setup/select")
+async def setup_select(request: SetupSelectRequest):
+    """Save the user's model selection to config file."""
+    config = {
+        "general": [dict(m) for m in request.general],
+        "code": [dict(m) for m in request.code],
+    }
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=2)
+    return {"status": "ok"}
+
+# Track active pull processes for cancellation
+active_pulls: Dict[str, subprocess.Popen] = {}
+
+@app.post("/api/setup/pull")
+async def setup_pull(request: SetupPullRequest):
+    """Pull a single model using Ollama CLI (cancellable)."""
+    tag = request.tag
+    try:
+        proc = subprocess.Popen(
+            ["ollama", "pull", tag],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        active_pulls[tag] = proc
+
+        # Wait for completion
+        stdout, stderr = proc.communicate(timeout=600)
+
+        # Clean up tracking
+        active_pulls.pop(tag, None)
+
+        if proc.returncode == 0:
+            return {"status": "ok", "tag": tag}
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to pull {tag}: {stderr}"
+            )
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        active_pulls.pop(tag, None)
+        raise HTTPException(status_code=504, detail=f"Timeout pulling {tag}")
+    except Exception as e:
+        active_pulls.pop(tag, None)
+        if "cancelled" in str(e).lower():
+            raise HTTPException(status_code=499, detail="Download cancelled")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class CancelPullRequest(BaseModel):
+    tag: str
+
+@app.post("/api/setup/cancel-pull")
+async def cancel_pull(request: CancelPullRequest):
+    """Cancel an active model pull."""
+    tag = request.tag
+    proc = active_pulls.pop(tag, None)
+    if proc and proc.poll() is None:
+        proc.kill()
+        proc.wait()
+        # Clean up partial download
+        try:
+            subprocess.run(
+                ["ollama", "rm", tag],
+                capture_output=True, text=True, timeout=30
+            )
+        except Exception:
+            pass
+        return {"status": "cancelled", "tag": tag}
+    return {"status": "not_found", "tag": tag}
+
+@app.get("/api/setup/installed")
+async def get_installed_models():
+    """Return currently installed models from config."""
+    if not CONFIG_FILE.exists():
+        return {"general": [], "code": []}
+    try:
+        with open(CONFIG_FILE, "r") as f:
+            config = json.load(f)
+        return config
+    except Exception:
+        return {"general": [], "code": []}
+
+@app.get("/api/setup/storage")
+async def get_storage_info():
+    """Return disk usage for each installed Ollama model."""
+    try:
+        result = subprocess.run(
+            ["ollama", "list"],
+            capture_output=True, text=True, timeout=15
+        )
+        if result.returncode != 0:
+            return {"models": {}, "total_bytes": 0, "total_display": "0 B"}
+
+        models = {}
+        total_bytes = 0
+
+        for line in result.stdout.strip().split("\n")[1:]:  # skip header
+            parts = line.split()
+            if len(parts) < 4:
+                continue
+            tag = parts[0]
+            # Size is typically like "1.1 GB" or "500 MB" — find it
+            size_str = ""
+            size_bytes = 0
+            for i, p in enumerate(parts):
+                if p in ("B", "KB", "MB", "GB", "TB") and i > 0:
+                    try:
+                        num = float(parts[i - 1])
+                        size_str = f"{parts[i-1]} {p}"
+                        multipliers = {"B": 1, "KB": 1024, "MB": 1024**2, "GB": 1024**3, "TB": 1024**4}
+                        size_bytes = int(num * multipliers.get(p, 1))
+                    except ValueError:
+                        pass
+                    break
+
+            models[tag] = {"size": size_str, "bytes": size_bytes}
+            total_bytes += size_bytes
+
+        # Format total
+        if total_bytes >= 1024**3:
+            total_display = f"{total_bytes / 1024**3:.1f} GB"
+        elif total_bytes >= 1024**2:
+            total_display = f"{total_bytes / 1024**2:.0f} MB"
+        else:
+            total_display = f"{total_bytes} B"
+
+        return {"models": models, "total_bytes": total_bytes, "total_display": total_display}
+    except Exception:
+        return {"models": {}, "total_bytes": 0, "total_display": "0 B"}
+
+class DeleteModelRequest(BaseModel):
+    tag: str
+    category: str  # "general" or "code"
+
+@app.post("/api/setup/delete")
+async def delete_model(request: DeleteModelRequest):
+    """Delete a model from config and from Ollama."""
+    global MODELS
+    # Remove from Ollama
+    try:
+        subprocess.run(
+            ["ollama", "rm", request.tag],
+            capture_output=True, text=True, timeout=60
+        )
+    except Exception:
+        pass  # Model might not exist in Ollama, that's ok
+
+    # Remove from config
+    if CONFIG_FILE.exists():
+        with open(CONFIG_FILE, "r") as f:
+            config = json.load(f)
+
+        category = request.category
+        if category in config:
+            config[category] = [
+                m for m in config[category] if m.get("tag") != request.tag
+            ]
+
+        with open(CONFIG_FILE, "w") as f:
+            json.dump(config, f, indent=2)
+
+    # Reload models in memory
+    MODELS = load_models_config()
+    return {"status": "ok"}
+
+class AddModelRequest(BaseModel):
+    name: str
+    tag: str
+    ram: str
+    category: str  # "general" or "code"
+
+@app.post("/api/setup/add")
+async def add_model(request: AddModelRequest):
+    """Add a model to config (does not pull it — use /api/setup/pull for that)."""
+    global MODELS
+    # Load or create config
+    config = {"general": [], "code": []}
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE, "r") as f:
+                config = json.load(f)
+        except Exception:
+            pass
+
+    entry = {
+        "name": request.name,
+        "tag": request.tag,
+        "ram": request.ram,
+        "category": request.category,
+    }
+
+    category = request.category
+    if category not in config:
+        config[category] = []
+
+    # Avoid duplicates
+    existing_tags = [m.get("tag") for m in config[category]]
+    if request.tag not in existing_tags:
+        config[category].append(entry)
+
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=2)
+
+    # Reload models in memory
+    MODELS = load_models_config()
+    return {"status": "ok"}
+
+# ============================================================================
+# SERVE FRONTEND
+# ============================================================================
+
 @app.get("/")
 async def serve_index():
+    """Serve chat UI, or redirect to setup wizard if not configured."""
+    if not CONFIG_FILE.exists():
+        return RedirectResponse(url="/setup")
     return FileResponse("index.html")
 
 # Run functionality

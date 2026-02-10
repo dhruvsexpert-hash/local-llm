@@ -29,18 +29,11 @@ COPY . .
 # Create the directory for saved chats
 RUN mkdir -p saved_chats
 
-# Pre-install Ollama models
-# We need to start Ollama temporarily to pull the models
-RUN ollama serve & \
-    sleep 5 && \
-    ollama pull qwen3:1.7b && \
-    ollama pull qwen2.5-coder:3b
+# Make start.sh executable
+RUN chmod +x start.sh
 
 # Expose the port the app runs on
 EXPOSE 8000
 
-# Make start.sh executable
-RUN chmod +x start.sh
-
-# Entrypoint script starts Ollama and FastAPI
+# Entrypoint script starts Ollama, runs setup wizard, then FastAPI
 CMD ["./start.sh"]
